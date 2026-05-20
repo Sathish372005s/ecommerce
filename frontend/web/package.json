@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.0.2",
     "@reduxjs/toolkit": "^2.11.2",
+    "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.15.2",
     "cloudinary": "^2.10.0",
     "lucide-react": "^1.16.0",
@@ -20,6 +21,7 @@
     "react-hook-form": "^7.76.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.1",
+    "tailwindcss": "^4.3.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
