@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
     fcmToken: {
       type: String // for push notifications
     },
+    otpVerified:{
+      type: Boolean,
+      default: false
+    },
     otp: String,
     otpExpire: Date,
     isVerified: {

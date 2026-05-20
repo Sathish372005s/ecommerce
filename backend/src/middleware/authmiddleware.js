@@ -12,8 +12,8 @@ export const isAuthenticated = async(req, res, next) => {
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log("Decoded token:", decoded);
-        req.user = await User.findById(decoded._id).select("-password");
-        console.log("Authenticated user: error in decode");
+        req.user = await User.findById(decoded.id).select("-password");
+        console.log("Authenticated user : ",req.user);
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized, user not found" });
         }

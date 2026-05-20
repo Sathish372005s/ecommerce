@@ -1,5 +1,6 @@
 
 export const isAdmin = (req, res, next) => {
+    console.log("admin middleware is hit")
     try {
         if (req.user && req.user.role === "admin") {
             next();

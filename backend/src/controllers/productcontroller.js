@@ -1,18 +1,30 @@
 import Product from "../models/product.model.js";
+import streamifier from "streamifier";
+import Cart from "../models/card.model.js";
 
 export const createProduct = async (req, res) => {
+  console.log("product controller ",req.files,req.body);
   try {
-    const { name, price,category,gender, description, stock, images, ratings } = req.body;
+    const { name, price, category, gender, description, sizes, ratings } = req.body;
+    if (!name || !price || !category || !gender || !description || !sizes) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+    
+    // sizes will come as a JSON string from FormData
+    const parsedSizes = typeof sizes === "string" ? JSON.parse(sizes) : sizes;
+    const images = req.files.map((file) => file.path);
+    
     const newproduct = await Product.create({
       name,
       price,
       category,
       gender,
       description,
-      stock,
+      sizes : parsedSizes,
       images,
       ratings
     });
+    
     res.status(201).json({ message: "Product created successfully", product: newproduct });
   } catch (error) {
     res.status(500).json({ message: "Create product failed", error });
@@ -30,7 +42,7 @@ export const getProducts = async (req, res) => {
       gender,
       rating,
       page = 1,
-      limit = 10,
+      limit = 6,
       sort = "latest"
     } = req.query;
     let filter = {};
@@ -90,10 +102,23 @@ export const getProductById = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, category, gender, description, stock, images, ratings } = req.body;
+    const { name, price, category, gender, description, sizes, ratings } = req.body;
+    
+    let updateData = { name, price, category, gender, description, ratings };
+    
+    if (sizes) {
+      updateData.sizes = typeof sizes === "string" ? JSON.parse(sizes) : sizes;
+    }
+    
+    if (req.files && req.files.length > 0) {
+      updateData.images = req.files.map((file) => file.path);
+    } else if (req.body.images) {
+      updateData.images = req.body.images;
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { name, price, category, gender, description, stock, images, ratings },
+      updateData,
       { new: true }
     );
     res.status(200).json({ message: "Product updated successfully", product: updatedProduct });
@@ -112,3 +137,18 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ message: "Delete failed", error });
   }
 };
+
+export const getproductsbycategory = async(req,res)=>{
+  try {
+    const {category} = req.params;
+    const products = await Product.find({category});
+    if (!products){
+      return res.status(404).json({message:"Products not found"});
+    }
+
+    res.status(200).json({category,categoryProducts:products});
+  } catch (error) {
+    res.status(500).json({message:"Fetch products failed",error});
+  }
+}
+

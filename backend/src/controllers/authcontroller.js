@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { Transporter } from "../config/transporter.js";
 import { sendNotificationforlogin } from "../utils/notification.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 
 const generateOtp = () => {
@@ -11,6 +13,7 @@ const generateOtp = () => {
 }
 
 const sendOtp = async(email,otp) => {
+  console.log("in sendOtp ",email,otp)
  await Transporter.sendMail({
     from: process.env.APP_USER,
     to: email,
@@ -21,11 +24,41 @@ const sendOtp = async(email,otp) => {
 
 export const sendotpoapi =async (req,res) =>{
   try {
+    console.log("otp hit");
     const { email } = req.body;
+    console.log("email",email);
+    if(!email){
+      return res.status(400).json({ message: "Email is required" });
+    }
+    console.log("after email check")
+    const existingUser = await User.findOne({ email ,isVerified:true });
+    console.log("existingUser",existingUser);
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+    console.log("after existing user check")
     const OTP = generateOtp();
+    let  hashedotp = await bcrypt.hash(OTP,10);
+    console.log("otp",OTP);
+    
+  
+      await User.findOneAndUpdate(
+        {email},
+        {
+          email,
+          otp:hashedotp,
+          otpExpire:Date.now() + 10 * 60 * 1000,
+          isVerified:false,
+          otpVerified:true
+        },{
+          upsert : true,
+          returnDocument: "after",
+        }
+      )
+    console.log("after upsert")
     await sendOtp(email, OTP);
-    await User.findOneAndUpdate({ email }, { otp: OTP, otpExpire: Date.now() + 3 * 60 * 1000 }); // OTP valid for 3 minutes
-    res.status(200).json({ message: "OTP sent successfully" });
+    console.log("otp sent successfully");
+    res.status(200).json({ message: "OTP sent successfully" ,otp:OTP});
   } catch (error) {
     res.status(500).json({ message: "Failed to send OTP", error });
   }
@@ -38,25 +71,43 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
     const existingUser =await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already in use" });
+    if (!existingUser) {
+      return res.status(400).json({ message: "generate otp first " });
     }
-    if(existingUser.otp !==otp){
-      return res.status(400).json({ message: "Invalid OTP" });
+        // check otp expiry
+    if (existingUser.otpExpire < Date.now()) {
+
+      // delete expired temp user
+      await User.deleteOne({ email });
+
+      return res.status(400).json({
+        message: "OTP expired. Please resend OTP",
+      });
     }
-    if(existingUser.otpExpire < Date.now()){
-      return res.status(400).json({ message: "OTP expired" });
+    if(existingUser.otpVerified==false){
+      return res.status(400).json({message:"otp not send , send it first "})
+    }
+    const isOtpCorrect = await bcrypt.compare(
+      otp,
+      existingUser.otp
+    );
+
+    if (!isOtpCorrect) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
     }
     const salt = await bcrypt.genSalt(10);
     const hashedpassword = await bcrypt.hash(password,salt);
-    const newUser = await User.create({
-      name,
-      email,
-      password:hashedpassword,
-      isVerified:true,
-      otp:undefined,
-    })
-    res.status(201).json({ message: "User registered successfully", user: newUser });
+    existingUser.name = name;
+    existingUser.password = hashedpassword;
+    existingUser.isVerified = true;
+    existingUser.otp = undefined;
+    existingUser.otpExpire = undefined;
+    existingUser.otpVerified = false;
+
+    await existingUser.save();
+    res.status(201).json({ message: "User registered successfully", user: existingUser });
   } catch (error) {
     res.status(500).json({ message: "Register failed", error });
   }
@@ -92,7 +143,6 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-
     res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     res.status(500).json({ message: "Logout failed", error });
