@@ -12,6 +12,10 @@ const orderSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product"
         },
+        size: {
+          type: String,
+          required: true
+        },
         quantity: Number,
         price: Number
       }
@@ -31,9 +35,20 @@ const orderSchema = new mongoose.Schema(
       default: "processing"
     },
     shippingAddress: {
-      type: String
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      zip: { type: String, required: true },
+      country: { type: String, default: "India" }
+    },
+    phone: {
+      type: String,
+      required: true
     },
     paymentId: {
+      type: String
+    },
+    razorpayOrderId: {
       type: String
     }
   },

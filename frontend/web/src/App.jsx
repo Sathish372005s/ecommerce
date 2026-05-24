@@ -13,6 +13,8 @@ import { useauthstore } from "./store/store";
 import Category from "./components/Category";
 import Prodcat from "./components/Prodcat";
 import Carosell from "./components/Carosell";
+import Personalpage from "./components/Personal-page";
+import Checkout from "./pages/Checkout";
 function App() {
 
   const {isAuthenticated,user} = useauthstore();
@@ -33,6 +35,9 @@ function App() {
         <Route path="/createproduct" element={isadmin ? <Createproduct /> : <Pagenotfound /> } />
         <Route path="/products" element={isadmin ? <Products /> : <Pagenotfound /> } />
         <Route path="/prodcat" element={<Prodcat />} />
+        <Route path="/Personal" element={<Personalpage />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="*" element={<Pagenotfound />} />
       </Routes>
     </>
   )

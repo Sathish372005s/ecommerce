@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
 import { usecartstore } from "../store/cardstore";
 import { Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Cart() {
+  const navigate = useNavigate();
 
   const { cart, getcart ,removecart} = usecartstore();
 
@@ -134,7 +136,7 @@ export default function Cart() {
                 <span>₹ {totalPrice}</span>
               </div>
 
-              <button className="w-full bg-black text-white py-3 rounded-xl mt-6 hover:bg-gray-800 transition">
+              <button onClick={() => navigate("/checkout")} className="w-full bg-black text-white py-3 rounded-xl mt-6 hover:bg-gray-800 transition">
                 Proceed to Checkout
               </button>
 
